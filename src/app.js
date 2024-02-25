@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(utils.requestLogger);
-//app.use('/api/face_detection', faceRouter);
+app.use('/api/face-detection', faceRouter);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 app.use(utils.unknownEndpoint);
 app.use(utils.errorHandler);
