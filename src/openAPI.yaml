@@ -1,0 +1,51 @@
+openapi: 3.0.0
+servers:
+  - description: test server for face detection API
+    url: https://localhost:3000
+info:
+  title: Face Detection
+  version: 1.0.0
+  description: API documentation for face detection
+paths:
+  /api/face-detection:
+    post:
+      summary: Create a new face detection request and subscribe to a webhook
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                callbackUrl:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+            encoding: 
+              profileImage:
+                contentType: image/png, image/jpeg
+      responses:
+        '201':
+          description: Creates a new request and uses a callback url to return a response when the request is compeleted
+      callbacks:
+        completedScan:   # Event name
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        faceCount:
+                          type: number
+                          example: 1
+                        requestId:
+                          type: string
+                          example: 'ABCDE'
+              responses:
+                '200':
+                  description: Your server returns this code if it accepts the callback
+
