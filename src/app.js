@@ -6,7 +6,7 @@ import YAML from 'yamljs';
 import swaggerUI from 'swagger-ui-express';
 import path from 'path';
 
-const swaggerDoc = YAML.load(path.join(__dirname, './openAPI.yaml'));
+const swaggerDoc = YAML.load(path.join(__dirname, '../openAPI.yaml'));
 
 const app = express();
 

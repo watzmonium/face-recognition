@@ -45,6 +45,9 @@ paths:
                         requestId:
                           type: string
                           example: 'ABCDE'
+                        status:
+                          type: string
+                          example: completed
               responses:
                 '200':
                   description: Your server returns this code if it accepts the callback

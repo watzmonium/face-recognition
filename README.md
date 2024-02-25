@@ -23,12 +23,13 @@ This app assumes that there is a `.env` file in the root directory with the foll
 - I agonized a bit about the `Content-Type` for the create detection endpoint, and ultimately decided to go with multipart/form-data because it is easier to work with multiple file extensions and seems appropriate based on RFC 2388.
 - I decided to preserve the images uploaded because in a real application, I would assume one would want the images for various reasons, and also one would probably use something like an S3 to store them. If I were developing this at scale, I would probably have the db table reference the URL of the image, but given the scope of this project, I will just store them on disk and keep the file name in the db.
 - I did not add validation for file size of images. That could be a bit of an issue if this were a production app because I'm keeping the images in memory before saving them to ensure I have control over how files are saved.
+- I realized there's a potential edge-case race condition if there's a pending callback and a request is deleted. I decided to just cancel the callback rather than return "deleted" or something to the webhook.
 - I'm just using a really basic API key for authentication for testing purposes.
 
 ## TODOs
-- basic server setup - folders, middleware, babelrc, gitignore, env
-- figure out and setup openAPI YAML
-- configure post route to accept images, rename them a random string, and save them to disk
+- basic server setup - folders, middleware, babelrc, gitignore, env ✔
+- figure out and setup openAPI YAML ✔
+- configure post route to accept images, rename them a random string, and save them to disk 
 - create basic testing/swagger routes as i go
 - configure the other routes
 - implement postgres with a seed table
