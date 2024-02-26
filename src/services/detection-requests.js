@@ -1,52 +1,59 @@
 import fileUtil from '../utils/file-util';
-import analyzeNumberOfFacesInImage from '../utils/face-detection/face-detect';
+import analyzeNumberOfFacesInImage from '../utils/face-detect';
 
-const db = {};
+const db = [];
 
 const createDetectionRequest = async (request, response) => {
-  if (!request.file) {
-    return response.status(400).send('No image uploaded');
-  }
+  try {
+    if (!request.file) {
+      return response.status(400).send('No image uploaded');
+    }
 
-  if (
-    request.file.mimetype !== 'image/jpeg' &&
-    request.file.mimetype !== 'image/png'
-  ) {
-    return response
-      .status(415)
-      .send('Unsupported image type. Supported types are jpeg and png');
-  }
+    if (
+      request.file.mimetype !== 'image/jpeg' &&
+      request.file.mimetype !== 'image/png'
+    ) {
+      return response
+        .status(415)
+        .send('Unsupported image type. Supported types are jpeg and png');
+    }
 
-  if (!request.body.callbackUrl) {
-    return response.status(400).send('No callback URL specified');
-  }
+    if (!request.body.callbackUrl) {
+      return response.status(400).send('No callback URL specified');
+    }
 
-  const callbackUrl = request.body.callbackUrl;
-  processDetectionRequest(request.file, callbackUrl);
-  response.sendStatus(201);
+    const callbackUrl = request.body.callbackUrl;
+    processDetectionRequest(request.file, callbackUrl);
+    response.sendStatus(201);
+  } catch (e) {
+    console.log('Error creating detection request', e);
+    response.sendStatus(500);
+  }
 };
 
 const processDetectionRequest = async (file, callbackUrl) => {
-  // save file
-  // write to database (status: pending)
-  // await analyzing image
-  // check if the request has since been deleted! if so, return
-  // update the database
-  // send a fetch request to the callbackUrl
-  const imageName = fileUtil.storeFileWithRandomName(file);
-  db[imageName] = { id: 1, status: 'pending', fileId: imageName };
-  const detections = await analyzeNumberOfFacesInImage(imageName);
-  db[imageName].status = 'completed';
-  db[imageName].faceCount = detections.length;
+  try {
+    const imageData = fileUtil.storeFileWithRandomName(file);
+    const req = { id: 1, status: 'pending', fileId: imageData.name, fileName: imageData.fileName };
+    db.push(req);
+    const detections = await analyzeNumberOfFacesInImage(imageName);
+    if (!req) {
+      return;
+    }
+    req.status = 'completed';
+    req.faceCount = detections;
 
-  const jsonData = {
-    requestId: db[imageName].fileId,
-    faceCount: db[imageName].faceCount,
-    status: db[imageName].status,
-  };
+    const jsonData = {
+      requestId: req.fileId,
+      faceCount: req.faceCount,
+      status: req.status,
+    };
 
-  await sendCompletedDetectionRequest(callbackUrl, jsonData); 
-  console.log(db)
+    await sendCompletedDetectionRequest(callbackUrl, jsonData);
+  } catch (e) {
+    console.log('Error sending request update to webook', e);
+    response.sendStatus(500);
+  }
 };
 
 const sendCompletedDetectionRequest = async (url, jsonData) => {
@@ -57,23 +64,50 @@ const sendCompletedDetectionRequest = async (url, jsonData) => {
       body: JSON.stringify(jsonData),
     });
   } catch (e) {
-    console.log('error sending data to webhook', e);
+    console.log('Error sending data to endpoint', e);
+    response.sendStatus(500);
   }
 };
 
 const getAllDetectionRequests = async (request, response) => {
-  // query database and return all entries
-  // should be an array of entries, each with {id, status, numfaces}
+  try {
+    const allRequests = db.map(entry => {entry.status, entry.fileId, entry.faceCount})
+    response.status(200).send(JSON.stringify(allRequests));
+  } catch (e) {
+    console.log('Error retrieving entries from database', e);
+    response.sendStatus(500);
+  }
 };
 
 const getSingleDetectionRequest = async (request, response) => {
-  // query database and return 1 entry
-  // should be single object with {id, status, numfaces}
+  try {
+    const fileId = request.body.fileId;
+    const req = db.find(entry => entry.fileId === fileId)
+    if (req) {
+      response.status(200).send(JSON.stringify(req));
+    } else {
+      response.status(404).send(`No request with id ${fileId}`)
+    }
+  } catch (e) {
+    console.log('Error retrieving entries from database', e);
+    response.sendStatus(500);
+  }
 };
 
 const deleteDetectionRequest = async (request, response) => {
-  // attempt to delete from database
-  // return 200
+  try {
+    const fileId = request.body.fileId;
+    const req = db.find(entry => entry.fileId === fileId)
+    if (req) {
+      db = db.filter(entry => entry.fileId !== fileId);
+      response.sendStatus(204);
+    } else {
+      response.status(404).send(`No request with id ${fileId}`)
+    }
+  } catch (e) {
+    console.log('Error retrieving entries from database', e);
+    response.sendStatus(500);
+  }
 };
 
 export default {

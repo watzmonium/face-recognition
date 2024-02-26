@@ -8,7 +8,7 @@ const storeFileWithRandomName = (file) => {
   const newFilename = `${randomName}${extension}`;
   const filePath = path.join(__dirname, '..', '..', 'images', newFilename);
   fs.writeFileSync(filePath, file.buffer);
-  return newFilename;
+  return {fileName: newFilename, name: randomName};
 };
 
 const getImageFromDisk = (fileName) => {
