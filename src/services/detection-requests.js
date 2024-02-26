@@ -1,7 +1,8 @@
 import fileUtil from '../utils/file-util';
 import analyzeNumberOfFacesInImage from '../utils/face-detect';
+import crypto from 'crypto';
 
-const db = [];
+let db = [];
 
 const createDetectionRequest = async (request, response) => {
   try {
@@ -23,20 +24,21 @@ const createDetectionRequest = async (request, response) => {
     }
 
     const callbackUrl = request.body.callbackUrl;
-    processDetectionRequest(request.file, callbackUrl);
-    response.sendStatus(201);
+    const fileId = crypto.randomBytes(10).toString('hex');
+    processDetectionRequest(request.file, fileId, callbackUrl);
+    response.status(201).send(JSON.stringify({fileId}));
   } catch (e) {
     console.log('Error creating detection request', e);
     response.sendStatus(500);
   }
 };
 
-const processDetectionRequest = async (file, callbackUrl) => {
+const processDetectionRequest = async (file, fileId, callbackUrl) => {
   try {
-    const imageData = fileUtil.storeFileWithRandomName(file);
-    const req = { id: 1, status: 'pending', fileId: imageData.name, fileName: imageData.fileName };
+    const fileName = fileUtil.storeFileWithRandomName(file, fileId);
+    const req = { id: 1, status: 'pending', fileId, fileName };
     db.push(req);
-    const detections = await analyzeNumberOfFacesInImage(imageName);
+    const detections = await analyzeNumberOfFacesInImage(req.fileName);
     if (!req) {
       return;
     }
@@ -52,7 +54,6 @@ const processDetectionRequest = async (file, callbackUrl) => {
     await sendCompletedDetectionRequest(callbackUrl, jsonData);
   } catch (e) {
     console.log('Error sending request update to webook', e);
-    response.sendStatus(500);
   }
 };
 
@@ -65,13 +66,12 @@ const sendCompletedDetectionRequest = async (url, jsonData) => {
     });
   } catch (e) {
     console.log('Error sending data to endpoint', e);
-    response.sendStatus(500);
   }
 };
 
 const getAllDetectionRequests = async (request, response) => {
   try {
-    const allRequests = db.map(entry => {entry.status, entry.fileId, entry.faceCount})
+    const allRequests = db.map(entry => ({status: entry.status, fileId: entry.fileId, faceCount: entry.faceCount}))
     response.status(200).send(JSON.stringify(allRequests));
   } catch (e) {
     console.log('Error retrieving entries from database', e);
@@ -81,10 +81,10 @@ const getAllDetectionRequests = async (request, response) => {
 
 const getSingleDetectionRequest = async (request, response) => {
   try {
-    const fileId = request.body.fileId;
+    const fileId = request.params.requestId;
     const req = db.find(entry => entry.fileId === fileId)
     if (req) {
-      response.status(200).send(JSON.stringify(req));
+      response.status(200).send(JSON.stringify({status: req.status, fileId: req.fileId, faceCount: req.faceCount}));
     } else {
       response.status(404).send(`No request with id ${fileId}`)
     }
@@ -96,7 +96,7 @@ const getSingleDetectionRequest = async (request, response) => {
 
 const deleteDetectionRequest = async (request, response) => {
   try {
-    const fileId = request.body.fileId;
+    const fileId = request.params.requestId;
     const req = db.find(entry => entry.fileId === fileId)
     if (req) {
       db = db.filter(entry => entry.fileId !== fileId);

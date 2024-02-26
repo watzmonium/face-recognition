@@ -28,6 +28,34 @@ paths:
       responses:
         '201':
           description: Creates a new request and uses a callback url to return a response when the request is compeleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileId: 
+                    type: string
+        '400':
+          description: Image not uploaded
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: No image uploaded
+        '415':
+          description: Unsupported image type
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Unsupported image type. Supported types are jpeg and png
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '500'
       callbacks:
         completedScan:   # Event name
           '{$request.body#/callbackUrl}':
@@ -51,4 +79,109 @@ paths:
               responses:
                 '200':
                   description: Your server returns this code if it accepts the callback
+                  content:
+                    text/plain:
+                      schema:
+                        type: string
+                        example: '200'
+                '500':
+                  description: Internal server error
+                  content:
+                    text/plain:
+                      schema:
+                        type: string
+                        example: '500'
+    get:
+      summary: Retrieve all detection requests in the database
+      responses:
+        '200':
+          description: Returns all requests in database as an array of objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                    fileId:
+                      type: string
+                    faceCount:
+                      type: integer
+              example:
+                - status: completed
+                  fileId: "8d845fac6004507e574b"
+                  faceCount: 1
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '500'
+  /api/face-detection/{fileId}:
+    get:
+      summary: Retrieve a detection requests in the database with an id of fileId.
+      parameters:
+        - in: path
+          name: fileId
+          schema:
+            type: string
+          required: true
+          description: Id of the request to get
+      responses:
+        '200':
+          description: Returns a single request with its available parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  fileId:
+                    type: string
+                  faceCount:
+                    type: integer
+        '404':
+          description: Database does not have the entry
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: No request with id
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '500'
+    delete:
+      summary: Delete a request from the database with the id of fileId.
+      parameters:
+        - in: path
+          name: fileId
+          schema:
+            type: string
+          required: true
+          description: Id of the request to get
+      responses:
+        '204':
+          description: Successfully deleted entry.
+        '404':
+          description: Database does not have the entry
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: No request with id
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '500'
 

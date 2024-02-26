@@ -1,7 +1,6 @@
 
-const analyzeNumberOfFacesInImage = async (image) => {
+const analyzeNumberOfFacesInImage = async (fileName) => {
   const numberOfFaces = Math.floor(Math.random() * 10)
-  console.log(numberOfFaces)
   return numberOfFaces 
 }
 

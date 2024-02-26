@@ -1,14 +1,12 @@
 import fs from 'fs';
-import crypto from 'crypto';
 import path from 'path';
 
-const storeFileWithRandomName = (file) => {
+const storeFileWithRandomName = (file, fileId) => {
   const extension = path.extname(file.originalname);
-  const randomName = crypto.randomBytes(10).toString('hex');
-  const newFilename = `${randomName}${extension}`;
+  const newFilename = `${fileId}${extension}`;
   const filePath = path.join(__dirname, '..', '..', 'images', newFilename);
   fs.writeFileSync(filePath, file.buffer);
-  return {fileName: newFilename, name: randomName};
+  return newFilename;
 };
 
 const getImageFromDisk = (fileName) => {
