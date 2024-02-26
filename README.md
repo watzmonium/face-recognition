@@ -1,18 +1,46 @@
 # documentation
 ## about
 This app was built with:
-- node v 20.6.1
+- node v20.6.1
+- express v4.18.2
+- postgresql
+
+This app was tested on a 2015 macbook pro OSXv12.7.1
+
+This is an app that exposes an API that can be used to upload images to scan for the number of faces in an image. Note that I was unable to successfully integrate facial recognition into this app, and as such it finds a random number of faces (0-10).
 
 ## setting up the environment
 This app assumes that there is a `.env` file in the root directory with the following properties:
-- PORT
-- API_KEYS
+- PORT (defaults to 3000 if not included)
+- API_KEYS (an array of accepted API keys as strings)
+- PSQL_DB="face_recognition"
+- PSQL_USERNAME set this value equal to the name of the psql user you wish to use ("postgres" is the default user)
+- PSQL_PASSWORD set this value equal to the password for the psql user you have chosen
+- PSQL_HOST="localhost"
+
+### PSQL setup
+run the following commands from your terminal:
+
+createdb face_recognition
+
+psql -d face_recognition < schema.sql
+
+This creates a new database that request-bin-ultra will use to store webhook information, then it sets up the schema for the database
 
 ## running the app locally
+Per specification, the app can be run with `docker compose up`
+It can also be run with `npm start`
 
 ## running tests
+The app was tested using the openAPI UI. Please visit `http://localhost:<yourport>/api-docs` to test the endpoints
+I did not have time to integrate a testing suite for basic methods
 
 ## further work
+If I had more time I would
+1) integrate basic tests
+2) attempt several other facial recognition projects
+3) add santization of data into the DB
+4) add more robust api authentication
 
 ## assumptions/notes
 - I used branch-based development, so to see all commits, you will have to examine specific branches as I develop features.
@@ -29,9 +57,9 @@ This app assumes that there is a `.env` file in the root directory with the foll
 ## TODOs
 - basic server setup - folders, middleware, babelrc, gitignore, env ✔
 - figure out and setup openAPI YAML ✔
-- configure post route to accept images, rename them a random string, and save them to disk 
-- create basic testing/swagger routes as i go
-- configure the other routes
-- implement postgres with a seed table
-- implement authentication
-- dockerize solution
+- configure post route to accept images, rename them a random string, and save them to disk   ✔
+- create basic testing/swagger routes as i go  ✔
+- configure the other routes  ✔
+- implement postgres with a seed table ✔
+- implement authentication ✔
+- dockerize solution ✔
