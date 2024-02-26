@@ -1,9 +1,14 @@
 import fileUtil from '../utils/file-util';
 import analyzeNumberOfFacesInImage from '../utils/face-detect';
 import db from './db';
+import validateApiKey from '../utils/validateApiKey';
 
 const createDetectionRequest = async (request, response) => {
   try {
+    if (!validateApiKey(request.headers.authorization)) {
+      return response.sendStatus(401);
+    }
+
     if (!request.file) {
       return response.status(400).send('No image uploaded');
     }
@@ -23,9 +28,12 @@ const createDetectionRequest = async (request, response) => {
 
     const callbackUrl = request.body.callbackUrl;
     const fileData = fileUtil.storeFileWithRandomName(request.file);
-    const dbResponse = await db.createDetectionRequest(fileData.fileName, fileData.fileId)
+    const dbResponse = await db.createDetectionRequest(
+      fileData.fileName,
+      fileData.fileId
+    );
     processDetectionRequest(fileData.fileId, fileData.fileName, callbackUrl);
-    response.status(201).send(JSON.stringify({fileId: fileData.fileId}));
+    response.status(201).send(JSON.stringify({ fileId: fileData.fileId }));
   } catch (e) {
     console.log('Error creating detection request', e);
     response.sendStatus(500);
@@ -67,9 +75,18 @@ const sendCompletedDetectionRequest = async (url, jsonData) => {
 };
 
 const getAllDetectionRequests = async (request, response) => {
+  if (!validateApiKey(request.headers.authorization)) {
+    return response.sendStatus(401);
+  }
+
   try {
     const allRequests = await db.getAllRequests();
-    response.status(200).send(JSON.stringify(allRequests.rows));
+    const mappedRequests = allRequests.rows.map((res) => ({
+      status: res.status,
+      fileId: res.file_id,
+      faceCount: res.face_count,
+    }));
+    response.status(200).send(JSON.stringify(mappedRequests));
   } catch (e) {
     console.log('Error retrieving entries from database', e);
     response.sendStatus(500);
@@ -77,14 +94,26 @@ const getAllDetectionRequests = async (request, response) => {
 };
 
 const getSingleDetectionRequest = async (request, response) => {
+  if (!validateApiKey(request.headers.authorization)) {
+    return response.sendStatus(401);
+  }
+
   try {
     const fileId = request.params.requestId;
     const result = await db.getSingleRequest(fileId);
     if (result.rowCount > 0) {
-      const singleRes = result.rows[0]
-      response.status(200).send(JSON.stringify({status: singleRes.status, fileId: singleRes.file_id, faceCount: singleRes.face_count}));
+      const singleRes = result.rows[0];
+      response
+        .status(200)
+        .send(
+          JSON.stringify({
+            status: singleRes.status,
+            fileId: singleRes.file_id,
+            faceCount: singleRes.face_count,
+          })
+        );
     } else {
-      response.status(404).send(`No request with id ${fileId}`)
+      response.status(404).send(`No request with id ${fileId}`);
     }
   } catch (e) {
     console.log('Error retrieving entries from database', e);
@@ -93,14 +122,17 @@ const getSingleDetectionRequest = async (request, response) => {
 };
 
 const deleteDetectionRequest = async (request, response) => {
+  if (!validateApiKey(request.headers.authorization)) {
+    return response.sendStatus(401);
+  }
+
   try {
     const fileId = request.params.requestId;
     const result = await db.deleteRequest(fileId);
-    console.log(result)
     if (result.rowCount > 0) {
       response.sendStatus(204);
     } else {
-      response.status(404).send(`No request with id ${fileId}`)
+      response.status(404).send(`No request with id ${fileId}`);
     }
   } catch (e) {
     console.log('Error retrieving entries from database', e);

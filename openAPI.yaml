@@ -6,9 +6,22 @@ info:
   title: Face Detection
   version: 1.0.0
   description: API documentation for face detection
+components:
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+security:
+  - apiKey: []
+
 paths:
   /api/face-detection:
     post:
+      security:
+        - apiKey: []
       summary: Create a new face detection request and subscribe to a webhook
       requestBody:
         required: true
@@ -56,6 +69,8 @@ paths:
               schema:
                 type: string
                 example: '500'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
       callbacks:
         completedScan:   # Event name
           '{$request.body#/callbackUrl}':
@@ -91,7 +106,11 @@ paths:
                       schema:
                         type: string
                         example: '500'
+                '401':
+                  $ref: '#/components/responses/UnauthorizedError'
     get:
+      security:
+        - apiKey: []
       summary: Retrieve all detection requests in the database
       responses:
         '200':
@@ -120,8 +139,12 @@ paths:
               schema:
                 type: string
                 example: '500'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
   /api/face-detection/{fileId}:
     get:
+      security:
+        - apiKey: []
       summary: Retrieve a detection requests in the database with an id of fileId.
       parameters:
         - in: path
@@ -158,7 +181,11 @@ paths:
               schema:
                 type: string
                 example: '500'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
     delete:
+      security:
+        - apiKey: []
       summary: Delete a request from the database with the id of fileId.
       parameters:
         - in: path
@@ -184,4 +211,5 @@ paths:
               schema:
                 type: string
                 example: '500'
-
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
