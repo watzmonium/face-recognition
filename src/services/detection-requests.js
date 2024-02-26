@@ -1,8 +1,7 @@
 import fileUtil from '../utils/file-util';
 import analyzeNumberOfFacesInImage from '../utils/face-detect';
 import crypto from 'crypto';
-
-let db = [];
+import db from './db';
 
 const createDetectionRequest = async (request, response) => {
   try {
@@ -24,31 +23,30 @@ const createDetectionRequest = async (request, response) => {
     }
 
     const callbackUrl = request.body.callbackUrl;
-    const fileId = crypto.randomBytes(10).toString('hex');
-    processDetectionRequest(request.file, fileId, callbackUrl);
-    response.status(201).send(JSON.stringify({fileId}));
+    const fileData = fileUtil.storeFileWithRandomName(request.file);
+    const dbResponse = await db.createDetectionRequest(fileData.fileName, fileData.fileId)
+    processDetectionRequest(fileData.fileId, fileData.fileName, callbackUrl);
+    response.status(201).send(JSON.stringify({fileId: fileData.fileId}));
   } catch (e) {
     console.log('Error creating detection request', e);
     response.sendStatus(500);
   }
 };
 
-const processDetectionRequest = async (file, fileId, callbackUrl) => {
+const processDetectionRequest = async (fileId, fileName, callbackUrl) => {
   try {
-    const fileName = fileUtil.storeFileWithRandomName(file, fileId);
-    const req = { id: 1, status: 'pending', fileId, fileName };
-    db.push(req);
-    const detections = await analyzeNumberOfFacesInImage(req.fileName);
-    if (!req) {
+    // note this returns just a random number. I was unable to get a facial recognition package to work
+    const detections = await analyzeNumberOfFacesInImage(fileName);
+    const result = await db.updateFaceCount(detections, fileId);
+    if (result.rowCount === 0) {
       return;
     }
-    req.status = 'completed';
-    req.faceCount = detections;
+    const request = result.rows[0];
 
     const jsonData = {
-      requestId: req.fileId,
-      faceCount: req.faceCount,
-      status: req.status,
+      requestId: request.file_id,
+      faceCount: request.face_count,
+      status: request.status,
     };
 
     await sendCompletedDetectionRequest(callbackUrl, jsonData);
