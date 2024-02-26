@@ -1,6 +1,5 @@
 import fileUtil from '../utils/file-util';
 import analyzeNumberOfFacesInImage from '../utils/face-detect';
-import crypto from 'crypto';
 import db from './db';
 
 const createDetectionRequest = async (request, response) => {
@@ -69,8 +68,8 @@ const sendCompletedDetectionRequest = async (url, jsonData) => {
 
 const getAllDetectionRequests = async (request, response) => {
   try {
-    const allRequests = db.map(entry => ({status: entry.status, fileId: entry.fileId, faceCount: entry.faceCount}))
-    response.status(200).send(JSON.stringify(allRequests));
+    const allRequests = await db.getAllRequests();
+    response.status(200).send(JSON.stringify(allRequests.rows));
   } catch (e) {
     console.log('Error retrieving entries from database', e);
     response.sendStatus(500);
@@ -80,9 +79,10 @@ const getAllDetectionRequests = async (request, response) => {
 const getSingleDetectionRequest = async (request, response) => {
   try {
     const fileId = request.params.requestId;
-    const req = db.find(entry => entry.fileId === fileId)
-    if (req) {
-      response.status(200).send(JSON.stringify({status: req.status, fileId: req.fileId, faceCount: req.faceCount}));
+    const result = await db.getSingleRequest(fileId);
+    if (result.rowCount > 0) {
+      const singleRes = result.rows[0]
+      response.status(200).send(JSON.stringify({status: singleRes.status, fileId: singleRes.file_id, faceCount: singleRes.face_count}));
     } else {
       response.status(404).send(`No request with id ${fileId}`)
     }
@@ -95,9 +95,9 @@ const getSingleDetectionRequest = async (request, response) => {
 const deleteDetectionRequest = async (request, response) => {
   try {
     const fileId = request.params.requestId;
-    const req = db.find(entry => entry.fileId === fileId)
-    if (req) {
-      db = db.filter(entry => entry.fileId !== fileId);
+    const result = await db.deleteRequest(fileId);
+    console.log(result)
+    if (result.rowCount > 0) {
       response.sendStatus(204);
     } else {
       response.status(404).send(`No request with id ${fileId}`)
