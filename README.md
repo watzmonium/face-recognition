@@ -25,7 +25,7 @@ createdb face_recognition
 
 psql -d face_recognition < schema.sql
 
-This creates a new database that request-bin-ultra will use to store webhook information, then it sets up the schema for the database
+This creates a new database that face-recognition will use to store webhook information, then it sets up the schema for the database
 
 ## running the app locally
 Per specification, the app can be run with `docker compose up`
